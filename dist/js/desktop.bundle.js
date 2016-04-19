@@ -8,9 +8,9 @@ webpackJsonp([0],[
 
 	var _three = __webpack_require__(1);
 
-	var _pubnub = __webpack_require__(2);
+	var _pubsub = __webpack_require__(3);
 
-	var _pubnub2 = _interopRequireDefault(_pubnub);
+	var _pubsub2 = _interopRequireDefault(_pubsub);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -52,26 +52,13 @@ webpackJsonp([0],[
 	    value: function start() {
 	      var _this2 = this;
 
-	      this.pubnub = new _pubnub2.default({
-	        publish_key: 'pub-c-e0b788e5-deaa-44f9-8f6e-a5e97fe3b6cf',
-	        subscribe_key: 'sub-c-c825c9b2-0666-11e6-a5b5-0619f8945a4f'
-	      });
-	      console.log('Subscribing..');
-	      this.pubnub.subscribe({
-	        channel: 'hello_world',
-	        message: function message(_message, envelope, channelOrGroup, time, channel) {
-	          return console.log('\n        Message Received.\n        Channel or Group: ' + JSON.stringify(channelOrGroup) + '\n        Channel: ' + JSON.stringify(channel) + '\n        Message: ' + JSON.stringify(_message) + '\n        Time: ' + time + '\n        Raw Envelope: ' + JSON.stringify(envelope) + '\n        ');
-	        },
-	        connect: function connect() {
-	          console.log('Since we\'re publishing on subscribe connectEvent, we\'re sure we\'ll receive the following publish.');
-	          _this2.pubnub.publish({
-	            channel: 'hello_world',
-	            message: 'Hello from PubNub Docs!',
-	            callback: function callback(m) {
-	              return console.log(m);
-	            }
-	          });
-	        }
+	      var channel = '123'; // String(Date.now())
+
+	      this.pubsub = new _pubsub2.default();
+	      this.pubsub.subscribe(channel, function (message) {
+	        return _this2.onUpdate(message);
+	      }).then(function () {
+	        return console.log('connect to ' + channel);
 	      });
 
 	      this.camera = new PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
@@ -79,12 +66,12 @@ webpackJsonp([0],[
 	      this.camera.position.z = 400;
 	      this.camera.position.y = 400;
 	      this.camera.lookAt(new Vector3(-1, -1, -1));
-	      console.log(this.camera);
 
 	      this.scene = new Scene();
 
-	      var cube = new CubeMesh(200, 200, 200);
-	      this.scene.add(cube);
+	      this.cube = new CubeMesh(200, 200, 200);
+	      this.cube.rotation.order = 'ZXY';
+	      this.scene.add(this.cube);
 
 	      this.renderer = new WebGLRenderer();
 	      this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -101,6 +88,22 @@ webpackJsonp([0],[
 	      this.camera.aspect = window.innerWidth / window.innerHeight;
 	      this.camera.updateProjectionMatrix();
 	      this.renderer.setSize(window.innerWidth, window.innerHeight);
+	    }
+	  }, {
+	    key: 'onUpdate',
+	    value: function onUpdate(message) {
+	      if (message.orientation) {
+	        var _message$orientation = message.orientation;
+	        var alpha = _message$orientation.alpha;
+	        var beta = _message$orientation.beta;
+	        var gamma = _message$orientation.gamma;
+
+	        this.cube.rotation.x = beta * Math.PI / 180;
+	        this.cube.rotation.y = gamma * Math.PI / 180;
+	        this.cube.rotation.z = alpha * Math.PI / 180;
+	      } else {
+	        console.log(message);
+	      }
 	    }
 	  }, {
 	    key: 'loop',
@@ -124,6 +127,78 @@ webpackJsonp([0],[
 	}();
 
 	Application.main();
+
+/***/ },
+/* 1 */,
+/* 2 */,
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _pubnub = __webpack_require__(2);
+
+	var _pubnub2 = _interopRequireDefault(_pubnub);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Pubsub = function () {
+	  function Pubsub() {
+	    _classCallCheck(this, Pubsub);
+
+	    this.pubnub = new _pubnub2.default({
+	      publish_key: 'pub-c-e0b788e5-deaa-44f9-8f6e-a5e97fe3b6cf',
+	      subscribe_key: 'sub-c-c825c9b2-0666-11e6-a5b5-0619f8945a4f',
+	      ssl: 'https:' == document.location.protocol ? true : false
+	    });
+	  }
+
+	  _createClass(Pubsub, [{
+	    key: 'subscribe',
+	    value: function subscribe(channelName, cb) {
+	      var _this = this;
+
+	      return new Promise(function (resolve) {
+	        _this.pubnub.subscribe({
+	          channel: channelName,
+	          message: function message(_message) {
+	            return cb ? cb(_message) : null;
+	          },
+	          connect: function connect() {
+	            return resolve();
+	          }
+	        });
+	      });
+	    }
+	  }, {
+	    key: 'publish',
+	    value: function publish(channel, message) {
+	      var _this2 = this;
+
+	      return new Promise(function (resolve) {
+	        _this2.pubnub.publish({
+	          channel: channel,
+	          message: message,
+	          callback: function callback(m) {
+	            return resolve(m);
+	          }
+	        });
+	      });
+	    }
+	  }]);
+
+	  return Pubsub;
+	}();
+
+	exports.default = Pubsub;
 
 /***/ }
 ]);

@@ -1,7 +1,7 @@
 import {
   THREE
 } from 'three'
-import Pubnub from 'pubnub'
+import Pubsub from './pubsub'
 
 const Scene = THREE.Scene
 const PerspectiveCamera = THREE.PerspectiveCamera
@@ -21,42 +21,23 @@ class CubeMesh extends Mesh {
 
 class Application {
   start() {
-    this.pubnub = new Pubnub({
-      publish_key: 'pub-c-e0b788e5-deaa-44f9-8f6e-a5e97fe3b6cf',
-      subscribe_key: 'sub-c-c825c9b2-0666-11e6-a5b5-0619f8945a4f'
-    })
-    console.log('Subscribing..');
-    this.pubnub.subscribe({
-      channel: 'hello_world',
-      message: (message, envelope, channelOrGroup, time, channel) => console.log(`
-        Message Received.
-        Channel or Group: ${JSON.stringify(channelOrGroup)}
-        Channel: ${JSON.stringify(channel)}
-        Message: ${JSON.stringify(message)}
-        Time: ${time}
-        Raw Envelope: ${JSON.stringify(envelope)}
-        `),
-      connect: () => {
-        console.log(`Since we're publishing on subscribe connectEvent, we're sure we'll receive the following publish.`)
-        this.pubnub.publish({
-          channel: 'hello_world',
-          message: 'Hello from PubNub Docs!',
-          callback: m => console.log(m)
-        })
-      }
-    })
+    const channel = '123'; // String(Date.now())
+
+    this.pubsub = new Pubsub()
+    this.pubsub.subscribe(channel, message => this.onUpdate(message))
+      .then(() => console.log(`connect to ${channel}`))
 
     this.camera = new PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000)
     this.camera.position.x = 400
     this.camera.position.z = 400
     this.camera.position.y = 400
     this.camera.lookAt(new Vector3(-1, -1, -1))
-    console.log(this.camera)
 
     this.scene = new Scene()
 
-    let cube = new CubeMesh(200, 200, 200)
-    this.scene.add(cube)
+    this.cube = new CubeMesh(200, 200, 200)
+    this.cube.rotation.order = 'ZXY'
+    this.scene.add(this.cube)
 
     this.renderer = new WebGLRenderer()
     this.renderer.setPixelRatio(window.devicePixelRatio)
@@ -70,6 +51,21 @@ class Application {
     this.camera.aspect = window.innerWidth / window.innerHeight
     this.camera.updateProjectionMatrix()
     this.renderer.setSize(window.innerWidth, window.innerHeight)
+  }
+
+  onUpdate(message) {
+    if (message.orientation) {
+      let {
+        alpha,
+        beta,
+        gamma
+      } = message.orientation
+      this.cube.rotation.x = beta * Math.PI / 180
+      this.cube.rotation.y = gamma * Math.PI / 180
+      this.cube.rotation.z = alpha * Math.PI / 180
+    } else {
+      console.log(message)
+    }
   }
 
   loop() {
