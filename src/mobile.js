@@ -9,7 +9,6 @@ class Application {
     this.pubsub.publish(this.channel, {
         type: 'connected'
       })
-      .then()
 
     if (window.DeviceOrientationEvent) {
       let stream = Bacon

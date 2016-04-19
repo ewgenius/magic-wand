@@ -33,7 +33,7 @@ webpackJsonp([1],[
 	      this.pubsub = new _pubsub2.default();
 	      this.pubsub.publish(this.channel, {
 	        type: 'connected'
-	      }).then();
+	      });
 
 	      if (window.DeviceOrientationEvent) {
 	        var stream = _baconjs2.default.fromEvent(window, 'deviceorientation').throttle(100);
