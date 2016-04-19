@@ -2,8 +2,9 @@ var webpack = require('webpack')
 
 module.exports = {
   entry: {
-    app: './src/app.js',
-    vendor: ['three']
+    desktop: './src/desktop.js',
+    mobile: './src/mobile.js',
+    vendor: ['three', 'pubnub']
   },
   output: {
     filename: '[name].bundle.js',
