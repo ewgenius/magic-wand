@@ -1,4 +1,5 @@
 import Pubsub from './pubsub'
+import Bacon from 'baconjs'
 
 class Application {
   start() {
@@ -10,8 +11,12 @@ class Application {
       })
       .then()
 
-    if (window.DeviceOrientationEvent)
-      window.addEventListener('deviceorientation', e => this.tilt(e.alpha, e.beta, e.gamma), false)
+    if (window.DeviceOrientationEvent) {
+      let stream = Bacon
+        .fromEvent(window, 'deviceorientation')
+        .throttle(100)
+      stream.onValue(v => this.tilt(v.alpha, v.beta, v.gamma))
+    }
   }
 
   tilt(alpha, beta, gamma) {

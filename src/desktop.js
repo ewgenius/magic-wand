@@ -24,8 +24,8 @@ class Application {
     const channel = '123'; // String(Date.now())
 
     this.pubsub = new Pubsub()
-    this.pubsub.subscribe(channel, message => this.onUpdate(message))
-      .then(() => console.log(`connect to ${channel}`))
+    let stream = this.pubsub.subscribe(channel)
+    stream.onValue(value => this.onUpdate(value))
 
     this.camera = new PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000)
     this.camera.position.x = 400

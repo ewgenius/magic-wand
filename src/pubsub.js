@@ -1,4 +1,5 @@
 import Pubnub from 'pubnub'
+import Bacon from 'baconjs'
 
 export default class Pubsub {
   constructor() {
@@ -9,14 +10,17 @@ export default class Pubsub {
     })
   }
 
-  subscribe(channelName, cb) {
-    return new Promise(resolve => {
+  subscribe(channel) {
+    let stream = Bacon.fromBinder(sink => {
       this.pubnub.subscribe({
-        channel: channelName,
-        message: message => cb ? cb(message) : null,
-        connect: () => resolve()
+        channel,
+        message: sink
+      })
+      return () => this.pubnub.unsubscribe({
+        channel
       })
     })
+    return stream
   }
 
   publish(channel, message) {
